@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vet Science CDE — Breed &amp; Species Photo ID</title>
+<style>
+  :root {
+    --ink: #17242b;
+    --paper: #f6f4ee;
+    --card: #ffffff;
+    --line: #d9d4c7;
+    --muted: #6b7a80;
+    --accent: #2f6f5e;
+    --accent-soft: #e4efe9;
+    --amber: #b8791f;
+    --red: #b1442f;
+    --red-soft: #f6e3de;
+    --green-ok: #2f7d4f;
+    --green-soft: #e0efe4;
+    --shadow: 0 1px 2px rgba(23,36,43,.06), 0 8px 24px rgba(23,36,43,.06);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  header.app { padding: 22px 20px 18px; border-bottom: 1px solid var(--line); background: var(--card); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 18px; }
+  .eyebrow { font-family: ui-sans-serif, system-ui, sans-serif; text-transform: uppercase; letter-spacing: .16em; font-size: 11px; font-weight: 700; color: var(--accent); margin: 0 0 4px; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 6px; font-family: ui-sans-serif, system-ui, sans-serif; }
+  main { padding: 26px 0 60px; }
+
+  .section-label { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12.5px; font-weight: 600; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
+  button.btn { font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 14px; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+  button.btn.secondary { background: var(--card); color: var(--ink); border-color: var(--line); }
+  button.btn:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+  button.btn:disabled { opacity: .5; cursor: default; }
+
+  .quiz-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+  .progress-bar { height: 6px; background: var(--line); border-radius: 4px; overflow: hidden; margin-bottom: 18px; }
+  .progress-bar > span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease; }
+  .qmeta { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .photo-frame { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px; display: flex; align-items: center; justify-content: center; min-height: 260px; }
+  .photo-frame img { max-width: 100%; max-height: 340px; border-radius: 8px; display: block; }
+  .qstem { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; color: var(--muted); margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  @media (max-width: 520px){ .options { grid-template-columns: 1fr; } }
+  .opt { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; text-align: left; padding: 13px 15px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; transition: background .1s; }
+  .opt:hover:not(:disabled) { background: var(--accent-soft); }
+  .opt:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .opt.correct { background: var(--green-soft); border-color: var(--green-ok); color: #1c5133; font-weight: 700; }
+  .opt.wrong { background: var(--red-soft); border-color: var(--red); color: #7d2a1c; font-weight: 700; }
+  .opt:disabled { cursor: default; }
+
+  .feedback { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; margin-top: 16px; padding: 12px 14px; border-radius: 10px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: var(--green-soft); color: #1c5133; }
+  .feedback.no { background: var(--red-soft); color: #7d2a1c; }
+
+  .score-big { font-size: 46px; font-weight: 800; letter-spacing: -.02em; margin: 4px 0; font-family: "Iowan Old Style", Georgia, serif; }
+  .score-big small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .missed-list { margin-top: 12px; display: grid; gap: 10px; }
+  .missed-item { display: flex; gap: 12px; align-items: center; background: var(--red-soft); border-radius: 10px; padding: 10px; }
+  .missed-item img { width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+  .missed-item .mtext { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; color: #7d2a1c; }
+  .missed-item .mtext b { color: #5c1f14; }
+
+  .stat-strip { display: flex; gap: 18px; flex-wrap: wrap; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: var(--muted); margin-top: 16px; }
+  .stat-strip b { color: var(--ink); font-size: 15px; }
+
+  .setup-count { color: var(--muted); font-size: 13px; font-family: ui-sans-serif, system-ui, sans-serif; margin-top: 14px; }
+  footer { color: var(--muted); font-size: 12px; font-family: ui-sans-serif, system-ui, sans-serif; text-align: center; padding: 24px 0 40px; }
+  /* timed mode */
+  .toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13.5px; color: var(--ink); margin-top: 18px; user-select: none; }
+  .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: relative; width: 42px; height: 24px; background: var(--line); border-radius: 999px; flex: none; transition: background .15s; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(23,36,43,.3); transition: left .15s; }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle input:checked + .toggle-track .toggle-thumb { left: 21px; }
+  .toggle input:focus-visible + .toggle-track { outline: 3px solid var(--amber); outline-offset: 2px; }
+  .toggle-label { line-height: 1.3; }
+
+  .pass-badge { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  .pass-badge.hidden { display: none; }
+  .timer { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .timer.hidden { display: none !important; }
+  .timer-bar { flex: 1; height: 8px; background: var(--line); border-radius: 5px; overflow: hidden; }
+  .timer-bar > span { display: block; height: 100%; width: 100%; background: var(--accent); border-radius: 5px; }
+  .timer-bar.low > span { background: var(--amber); }
+  .timer-bar.crit > span { background: var(--red); }
+  .timer-num { font-family: ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; color: var(--muted); min-width: 34px; text-align: right; }
+  .timer-num.crit { color: var(--red); }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="wrap">
+    <p class="eyebrow">California Veterinary Science CDE</p>
+    <h1>Breed &amp; Species Photo ID</h1>
+    <div class="sub" id="subline">See the animal, name the breed — the contest format.</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- SETUP -->
+    <section id="setup">
+      <div class="section-label">Which categories do you want to drill?</div>
+      <div class="chips" id="setupChips"></div>
+      <label class="toggle"><input type="checkbox" id="timedToggle"><span class="toggle-track"><span class="toggle-thumb"></span></span><span class="toggle-label">Timed mode — 15 seconds per photo, run through twice (mirrors contest pacing)</span></label>
+      <div class="row">
+        <button class="btn" id="startBtn">Start quiz</button>
+      </div>
+      <div class="setup-count" id="setupCount"></div>
+      <div class="stat-strip" id="homeStats"></div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="quiz" class="hidden">
+      <div class="quiz-card">
+        <div class="progress-bar"><span id="prog"></span></div>
+        <div class="qmeta"><span id="qcount"></span><span id="passBadge" class="pass-badge hidden"></span><span id="qscore"></span></div>
+        <div class="timer hidden" id="timerWrap"><div class="timer-bar" id="timerBar"><span id="timerFill"></span></div><div class="timer-num" id="timerNum">0:15</div></div>
+        <div class="photo-frame"><img id="qimg" alt="Animal to identify"></div>
+        <div class="qstem" id="qstem"></div>
+        <div class="options" id="opts"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="row">
+          <button class="btn" id="nextBtn" disabled>Next</button>
+          <button class="btn secondary" id="quitBtn">End quiz</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results" class="hidden">
+      <div class="quiz-card">
+        <div class="eyebrow">Results</div>
+        <div class="score-big"><span id="scoreNum">0</span><small id="scoreDen">/0</small></div>
+        <div class="sub" id="scorePct"></div>
+        <div id="missedWrap"></div>
+        <div class="row" style="margin-top:20px;">
+          <button class="btn" id="retryMissed">Retry missed only</button>
+          <button class="btn secondary" id="againBtn">New quiz</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>Photo set: 155 of 155 — complete · timed mode mirrors contest pacing · progress saved on this device only</footer>
+
+<script>
+/* ============================================================
+   BREED / SPECIES DATA
+   Every entry with an `img` appears in the quiz.
+   To ADD a breed photo later:
+     1. Put the image file in the images/ folder (lowercase, no spaces).
+     2. Add  img:"images/your-file.jpg"  to that breed's line below.
+   To find a breed, it's grouped by category. Dogs also carry g: (AKC group).
+   ============================================================ */
+const DATA = {
+  "Dog":  { items:[
+    {n:"Australian Cattle Dog",g:"Herding",img:"images/australian-cattle-dog.jpeg"},
+    {n:"Australian Shepherd",g:"Herding",img:"images/australian-shepherd.jpeg"},
+    {n:"Border Collie",g:"Herding",img:"images/border-collie.jpeg"},{n:"Collie",g:"Herding",img:"images/collie.jpeg"},
+    {n:"German Shepherd Dog",g:"Herding",img:"images/german-shepherd.jpeg"},{n:"Old English Sheepdog",g:"Herding",img:"images/old-english-sheepdog.jpeg"},
+    {n:"Pembroke Welsh Corgi",g:"Herding",img:"images/pembroke-welsh-corgi.jpeg"},{n:"Shetland Sheepdog",g:"Herding",img:"images/shetland-sheepdog.jpeg"},
+    {n:"Afghan Hound",g:"Hound",img:"images/afghan-hound.jpeg"},
+    {n:"Basenji",g:"Hound",img:"images/basenji.jpeg"},
+    {n:"Basset Hound",g:"Hound",img:"images/basset-hound.jpeg"},
+    {n:"Beagle",g:"Hound",img:"images/beagle.jpeg"},
+    {n:"Black and Tan Coonhound",g:"Hound",img:"images/black-and-tan-coonhound.jpeg"},{n:"Bloodhound",g:"Hound",img:"images/bloodhound.jpeg"},
+    {n:"Dachshund",g:"Hound",img:"images/dachshund.jpeg"},{n:"Greyhound",g:"Hound",img:"images/greyhound.jpeg"},{n:"Rhodesian Ridgeback",g:"Hound",img:"images/rhodesian-ridgeback.jpeg"},
+    {n:"Bichon Frise",g:"Non-Sporting",img:"images/bichon-frise.jpeg"},
+    {n:"Boston Terrier",g:"Non-Sporting",img:"images/boston-terrrier.jpeg"},{n:"Bulldog",g:"Non-Sporting",img:"images/bulldog.jpeg"},
+    {n:"Chinese Shar-Pei",g:"Non-Sporting",img:"images/chinese-sharpei.jpeg"},{n:"Chow Chow",g:"Non-Sporting",img:"images/chow-chow.jpeg"},
+    {n:"Dalmatian",g:"Non-Sporting",img:"images/dalmatian.jpeg"},{n:"Poodle",g:"Non-Sporting",img:"images/poodle.jpeg"},
+    {n:"Brittany Spaniel",g:"Sporting",img:"images/brittany-spaniel.jpeg"},{n:"Cocker Spaniel",g:"Sporting",img:"images/cocker-spaniel.jpeg"},
+    {n:"English Setter",g:"Sporting",img:"images/english-setter.jpeg"},{n:"German Shorthaired Pointer",g:"Sporting",img:"images/german-shorthaired-pointer.jpeg"},
+    {n:"Golden Retriever",g:"Sporting",img:"images/golden-retriever.jpeg"},{n:"Irish Setter",g:"Sporting",img:"images/irish-setter.jpeg"},
+    {n:"Labrador Retriever",g:"Sporting",img:"images/labrador-retriever.jpeg"},{n:"Weimaraner",g:"Sporting",img:"images/weimaraner.jpeg"},
+    {n:"Bull Terrier",g:"Terrier",img:"images/bull-terrier.jpeg"},{n:"Cairn Terrier",g:"Terrier",img:"images/cairn-terrier.jpeg"},
+    {n:"Parson Russell Terrier",g:"Terrier",img:"images/parson-russell-terrier.jpeg"},{n:"Scottish Terrier",g:"Terrier",img:"images/scottish-terrier.jpeg"},
+    {n:"West Highland White Terrier",g:"Terrier",img:"images/west-highland-white-terrier.jpeg"},
+    {n:"Cavalier King Charles Spaniel",g:"Toy",img:"images/cavalier-king-charles-spaniel.jpeg"},{n:"Chihuahua",g:"Toy",img:"images/chihuahua.jpeg"},
+    {n:"Miniature Pinscher",g:"Toy",img:"images/miniature-pinscher.jpeg"},{n:"Papillon",g:"Toy",img:"images/papillon.jpeg"},{n:"Pekingese",g:"Toy",img:"images/pekingese.jpeg"},
+    {n:"Pomeranian",g:"Toy",img:"images/pomeranian.jpeg"},{n:"Toy Poodle",g:"Toy",img:"images/toy-poodle.jpeg"},{n:"Pug",g:"Toy",img:"images/pug.jpeg"},
+    {n:"Shih Tzu",g:"Toy",img:"images/shih-tzu.jpeg"},{n:"Yorkshire Terrier",g:"Toy",img:"images/yorkshire-terrier.jpeg"},
+    {n:"Bernese Mountain Dog",g:"Working",img:"images/bernese-mountain-dog.jpeg"},{n:"Boxer",g:"Working",img:"images/boxer.jpeg"},
+    {n:"Doberman Pinscher",g:"Working",img:"images/doberman-pinscher.jpeg"},{n:"Great Dane",g:"Working",img:"images/great-dane.jpeg"},
+    {n:"Great Pyrenees",g:"Working",img:"images/great-pyrenees.jpeg"},{n:"Mastiff",g:"Working",img:"images/mastiff.jpeg"},
+    {n:"Newfoundland",g:"Working",img:"images/newfoundland.jpeg"},{n:"Portuguese Water Dog",g:"Working",img:"images/portugese-water-dog.jpeg"},
+    {n:"Rottweiler",g:"Working",img:"images/rottweiler.jpeg"},{n:"Saint Bernard",g:"Working",img:"images/saint-bernard.jpeg"},
+    {n:"Siberian Husky",g:"Working",img:"images/siberian-husky.jpeg"},{n:"Standard Schnauzer",g:"Working",img:"images/standard-schnauzer.jpeg"},
+  ]},
+  "Cat": { items:[
+    {n:"Abyssinian",img:"images/abyssinian.jpg"},
+    {n:"American Shorthair",img:"images/american-shorthair.jpeg"},
+    {n:"Burmese",img:"images/burmese.jpeg"},{n:"Maine Coon",img:"images/maine-coon.jpeg"},{n:"Manx",img:"images/manx.jpeg"},
+    {n:"Persian",img:"images/persian.jpeg"},{n:"Ragdoll",img:"images/ragdoll.jpeg"},{n:"Russian Blue",img:"images/russian-blue.jpeg"},{n:"Siamese",img:"images/siamese.jpeg"},{n:"Sphynx",img:"images/sphynx.jpeg"},
+  ]},
+  "Bird": { items:[
+    {n:"African Gray Parrot",img:"images/african-gray-parrot.jpeg"},
+    {n:"Canary",img:"images/canary.jpeg"},{n:"Cockatiel",img:"images/cockatiel.jpeg"},{n:"Cockatoo",img:"images/cockatoo.jpeg"},{n:"Love Bird",img:"images/love-bird.jpeg"},
+    {n:"Macaw",img:"images/macaw.jpeg"},{n:"Parakeet",img:"images/parakeet.jpeg"},{n:"Sun Conure",img:"images/sun-conure.jpeg"},{n:"Zebra Finch",img:"images/zebra-finch.jpeg"},
+  ]},
+  "Reptile": { items:[
+    {n:"Ball Python",img:"images/ball-python.jpeg"},
+    {n:"Bearded Dragon",img:"images/bearded-dragon.jpeg"},
+    {n:"Burmese Python",img:"images/burmese-python.jpeg"},{n:"Chameleon",img:"images/chameleon.jpeg"},{n:"Corn Snake",img:"images/corn-snake.jpeg"},{n:"Gecko",img:"images/gecko.jpeg"},{n:"Iguana",img:"images/iguana.jpeg"},
+  ]},
+  "Poultry": { items:[
+    {n:"Chicken — Cornish Cross Broiler",img:"images/cornish-cross-broiler.jpg"},{n:"Chicken — White Leghorn",img:"images/white-leghorn.jpg"},
+    {n:"Chicken — Plymouth Rock",img:"images/plymouth-rock.jpg"},{n:"Chicken — Rhode Island Red",img:"images/rhode-island-red.jpg"},
+    {n:"Duck — White Pekin",img:"images/white-pekin.jpg"},{n:"Duck — Khaki Campbell",img:"images/khaki-campbell.jpg"},{n:"Duck — Runner",img:"images/runner.jpg"},
+    {n:"Geese — Embden",img:"images/embden.jpg"},{n:"Quail — Coturnix",img:"images/coturnix.jpg"},{n:"Turkey — Broad Breasted White",img:"images/broad-breasted-white.jpg"},
+  ]},
+  "Small Mammal": { items:[
+    {n:"Chinchilla",img:"images/chinchilla.jpeg"},{n:"Ferret",img:"images/ferret.jpeg"},{n:"Gerbil",img:"images/gerbil.jpeg"},{n:"Guinea Pig",img:"images/guinea-pig.jpeg"},{n:"Hamster",img:"images/hamster.jpeg"},
+    {n:"Hedgehog",img:"images/hedgehog.jpeg"},{n:"Mouse",img:"images/mouse.jpeg"},{n:"Rat",img:"images/rat.jpeg"},{n:"Sugar Glider",img:"images/sugar-glider.jpeg"},
+  ]},
+  "Rabbit": { items:[
+    {n:"Angora",img:"images/rabbit-angora.jpeg"},{n:"Californian",img:"images/californian.jpeg"},{n:"Dutch",img:"images/dutch.jpeg"},{n:"English Spot",img:"images/english-spot.jpeg"},{n:"Holland Lop",img:"images/holland-lop.jpeg"},
+    {n:"Mini-Rex",img:"images/mini-rex.jpeg"},{n:"Netherland Dwarf",img:"images/netherland-dwarf.jpeg"},{n:"New Zealand",img:"images/new-zealand.jpeg"},
+  ]},
+  "Dairy Cattle": { items:[
+    {n:"Ayrshire",img:"images/ayrshire.jpeg"},
+    {n:"Brown Swiss",img:"images/brown-swiss.jpeg"},{n:"Guernsey",img:"images/guernsey.jpeg"},{n:"Holstein",img:"images/holstein.jpeg"},{n:"Jersey",img:"images/jersey.jpeg"},
+  ]},
+  "Beef Cattle": { items:[
+    {n:"Angus",img:"images/angus.jpeg"},
+    {n:"Brahman",img:"images/brahman.jpeg"},{n:"Charolais",img:"images/charolais.jpg"},{n:"Hereford",img:"images/hereford.jpeg"},{n:"Shorthorn",img:"images/shorthorn.jpeg"},{n:"Simmental",img:"images/simmental.jpeg"},
+  ]},
+  "Horse": { items:[
+    {n:"Appaloosa",img:"images/appaloosa.jpeg"},
+    {n:"Arabian",img:"images/arabian.jpeg"},
+    {n:"Belgian",img:"images/belgian.jpeg"},
+    {n:"Clydesdale",img:"images/clydesdale.jpeg"},{n:"Morgan",img:"images/morgan.jpeg"},{n:"Paint",img:"images/paint.jpeg"},
+    {n:"Percheron",img:"images/percheron.jpeg"},{n:"Quarter Horse",img:"images/quarter-horse.jpeg"},{n:"Saddlebred",img:"images/saddlebred.jpeg"},{n:"Tennessee Walking Horse",img:"images/tennessee-walking-horse.jpeg"},{n:"Thoroughbred",img:"images/thoroughbred.jpeg"},
+  ]},
+  "Goat": { items:[
+    {n:"Alpine",img:"images/alpine.jpeg"},
+    {n:"Nubian",img:"images/nubian.jpeg"},{n:"Angora",img:"images/goat-angora.jpeg"},{n:"Boer",img:"images/boer.jpeg"},{n:"LaMancha",img:"images/la-mancha.jpeg"},{n:"Saanen",img:"images/saanen.jpeg"},{n:"Toggenburg",img:"images/toggenburg.jpeg"},
+  ]},
+  "Sheep": { items:[
+    {n:"Columbia",img:"images/columbia.jpeg"},{n:"Dorper",img:"images/dorper.jpeg"},{n:"Dorset",img:"images/dorset.jpeg"},{n:"Hampshire",img:"images/hampshire-sheep.jpeg"},{n:"Merino",img:"images/merino.jpeg"},
+    {n:"Rambouillet",img:"images/rambouillet.jpeg"},{n:"Southdown",img:"images/southdown.jpeg"},{n:"Suffolk",img:"images/suffolk.jpeg"},
+  ]},
+  "Swine": { items:[
+    {n:"American Landrace",img:"images/american-landrace.jpeg"},
+    {n:"Berkshire",img:"images/berkshire.jpeg"},
+    {n:"Chester White",img:"images/chester-white.jpeg"},{n:"Duroc",img:"images/duroc.jpeg"},{n:"Hampshire",img:"images/hampshire-swine.jpeg"},{n:"Yorkshire",img:"images/yorkshire.jpeg"},
+  ]},
+};
+
+const CATEGORIES = Object.keys(DATA);
+
+/* Every item that has a photo, tagged with its category. */
+function photoItems(){
+  const out=[];
+  for(const cat of CATEGORIES)
+    for(const it of DATA[cat].items)
+      if(it.img) out.push({...it, cat});
+  return out;
+}
+const PHOTOS = photoItems();
+/* categories that actually have at least one photo */
+const PHOTO_CATS = CATEGORIES.filter(c => DATA[c].items.some(i=>i.img));
+
+/* ---- storage ---- */
+const STORE_KEY = "vetPhotoID_v1";
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {attempts:0, correct:0}; }catch(e){ return {attempts:0, correct:0}; } }
+function saveStore(s){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }catch(e){} }
+let store = loadStore();
+
+const $ = s => document.querySelector(s);
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function show(id){ ["setup","quiz","results"].forEach(s=>$("#"+s).classList.toggle("hidden", s!==id)); window.scrollTo({top:0,behavior:"smooth"}); }
+
+/* ============================================================
+   SETUP
+   ============================================================ */
+let selectedCats = new Set(PHOTO_CATS);
+
+function renderSetup(){
+  const chips = $("#setupChips"); chips.innerHTML="";
+  const all = makeChip("All", true, ()=>{
+    if(PHOTO_CATS.every(c=>selectedCats.has(c))) selectedCats.clear();
+    else selectedCats = new Set(PHOTO_CATS);
+    syncChips(); updateCount();
+  });
+  all.id="allChip"; chips.appendChild(all);
+  PHOTO_CATS.forEach(cat=>{
+    const count = DATA[cat].items.filter(i=>i.img).length;
+    const chip = makeChip(`${cat} (${count})`, true, ()=>{
+      selectedCats.has(cat)? selectedCats.delete(cat) : selectedCats.add(cat);
+      syncChips(); updateCount();
+    });
+    chip.dataset.cat=cat; chips.appendChild(chip);
+  });
+  syncChips(); updateCount(); renderStats();
+}
+function makeChip(label, pressed, onclick){
+  const b=document.createElement("button"); b.className="chip"; b.textContent=label;
+  b.setAttribute("aria-pressed",pressed); b.addEventListener("click",onclick); return b;
+}
+function syncChips(){
+  document.querySelectorAll("#setupChips .chip[data-cat]").forEach(ch=>
+    ch.setAttribute("aria-pressed", selectedCats.has(ch.dataset.cat)));
+  $("#allChip").setAttribute("aria-pressed", PHOTO_CATS.every(c=>selectedCats.has(c)));
+}
+function pool(){ return PHOTOS.filter(i=>selectedCats.has(i.cat)); }
+function updateCount(){
+  const n=pool().length;
+  $("#setupCount").textContent = n + " photo" + (n===1?"":"s") + " in this quiz.";
+  $("#startBtn").disabled = n<1;
+}
+function renderStats(){
+  $("#homeStats").innerHTML =
+    `<div><b>${PHOTOS.length}</b> photos loaded</div>` +
+    `<div><b>${PHOTO_CATS.length}</b> categories</div>` +
+    `<div><b>${store.attempts}</b> answered</div>` +
+    `<div><b>${store.attempts? Math.round(store.correct/store.attempts*100):0}%</b> lifetime accuracy</div>`;
+}
+let timedMode = false;
+$("#timedToggle").addEventListener("change", e=>{ timedMode = e.target.checked; });
+$("#startBtn").addEventListener("click", ()=> startQuiz(pool(), {timed: timedMode}));
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+const SEC_PER_PHOTO = 15;
+let quiz=null;
+let timerState=null;   // active countdown (rAF handle)
+let advanceTO=null;    // pending auto-advance timeout
+
+function clearTimers(){
+  if(timerState){ cancelAnimationFrame(timerState.raf); timerState=null; }
+  if(advanceTO){ clearTimeout(advanceTO); advanceTO=null; }
+}
+function startQuiz(items, opts){
+  opts = opts || {};
+  const timed = !!opts.timed;
+  /* Timed contest run = two passes over the selected pool, each freshly shuffled.
+     Untimed = one shuffled pass. Either way it uses whatever categories are selected. */
+  const seq = timed ? shuffle(items).concat(shuffle(items)) : shuffle(items);
+  quiz = { items: seq, idx:0, score:0, missed:[], answered:false,
+           timed, passLen: items.length, passes: timed?2:1 };
+  show("quiz"); renderQuestion();
+}
+function optionsFor(item){
+  const sameCat = DATA[item.cat].items.map(i=>i.n).filter(n=>n!==item.n);
+  const wrong = shuffle(sameCat).slice(0,3);
+  return { correct:item.n, opts: shuffle([item.n, ...wrong]) };
+}
+function startTimer(seconds, onEnd){
+  const wrap=$("#timerWrap"), bar=$("#timerBar"), fill=$("#timerFill"), num=$("#timerNum");
+  wrap.classList.remove("hidden"); bar.classList.remove("low","crit"); num.classList.remove("crit");
+  const dur=seconds*1000, start=performance.now();
+  function frame(now){
+    const remain=Math.max(0, dur-(now-start));
+    fill.style.width=(remain/dur*100)+"%";
+    const s=Math.ceil(remain/1000);
+    num.textContent="0:"+String(s).padStart(2,"0");
+    if(s<=5){ bar.classList.add("crit"); bar.classList.remove("low"); num.classList.add("crit"); }
+    else if(s<=8){ bar.classList.add("low"); }
+    if(remain<=0){ timerState=null; onEnd(); return; }
+    timerState.raf=requestAnimationFrame(frame);
+  }
+  timerState={ raf:requestAnimationFrame(frame) };
+}
+function renderQuestion(){
+  clearTimers();
+  const item=quiz.items[quiz.idx];
+  const q=optionsFor(item); quiz._q=q; quiz.answered=false;
+  $("#prog").style.width = (quiz.idx/quiz.items.length*100)+"%";
+  $("#qcount").textContent = `Photo ${quiz.idx+1} of ${quiz.items.length}`;
+  $("#qscore").textContent = `Score ${quiz.score}`;
+  const badge=$("#passBadge");
+  if(quiz.timed){
+    badge.textContent = `Pass ${Math.floor(quiz.idx/quiz.passLen)+1} of ${quiz.passes}`;
+    badge.classList.remove("hidden");
+  } else badge.classList.add("hidden");
+  $("#qimg").src = item.img;
+  $("#qimg").alt = "Identify this " + item.cat.toLowerCase();
+  $("#qstem").textContent = "Identify this " + item.cat.toLowerCase();
+  const opts=$("#opts"); opts.innerHTML="";
+  q.opts.forEach(o=>{
+    const b=document.createElement("button"); b.className="opt"; b.textContent=o;
+    b.addEventListener("click", ()=> pick(b,o,q,item)); opts.appendChild(b);
+  });
+  const fb=$("#feedback"); fb.className="feedback"; fb.textContent="";
+  if(quiz.timed){
+    $("#nextBtn").textContent="Skip"; $("#nextBtn").disabled=false;
+    startTimer(SEC_PER_PHOTO, ()=> onTimeout(q,item));
+  } else {
+    $("#timerWrap").classList.add("hidden");
+    $("#nextBtn").textContent="Next"; $("#nextBtn").disabled=true;
+  }
+}
+function lockOptions(correct){
+  document.querySelectorAll("#opts .opt").forEach(b=>{
+    b.disabled=true; if(b.textContent===correct) b.classList.add("correct");
+  });
+}
+function pick(btn, choice, q, item){
+  if(quiz.answered) return;
+  quiz.answered=true; clearTimers();
+  lockOptions(q.correct);
+  const ok = choice===q.correct;
+  if(!ok) btn.classList.add("wrong");
+  store.attempts++; if(ok) store.correct++;
+  if(ok) quiz.score++; else quiz.missed.push({item, chose:choice});
+  saveStore(store);
+  const fb=$("#feedback"); fb.classList.add("show");
+  if(ok){ fb.classList.add("ok"); fb.textContent="Correct — "+item.n+"."; }
+  else {
+    fb.classList.add("no");
+    const extra = item.cat==="Dog" && item.g ? `  (${item.g} group)` : "";
+    fb.textContent = `That's the ${choice}. This is the ${item.n}.` + extra;
+  }
+  $("#qscore").textContent=`Score ${quiz.score}`;
+  if(quiz.timed){
+    $("#timerWrap").classList.add("hidden");
+    $("#nextBtn").textContent="Next";
+    advanceTO=setTimeout(advance, 1400);
+  } else {
+    $("#nextBtn").disabled=false; $("#nextBtn").focus();
+  }
+}
+function onTimeout(q,item){
+  if(quiz.answered) return;
+  quiz.answered=true; clearTimers();
+  lockOptions(q.correct);
+  store.attempts++; quiz.missed.push({item, chose:"no answer (time up)"}); saveStore(store);
+  const fb=$("#feedback"); fb.classList.add("show","no");
+  const extra = item.cat==="Dog" && item.g ? `  (${item.g} group)` : "";
+  fb.textContent = `Time's up — this is the ${item.n}.` + extra;
+  $("#qscore").textContent=`Score ${quiz.score}`;
+  $("#timerWrap").classList.add("hidden");
+  $("#nextBtn").textContent="Next";
+  advanceTO=setTimeout(advance, 1400);
+}
+function advance(){
+  clearTimers();
+  quiz.idx++;
+  if(quiz.idx>=quiz.items.length) finishQuiz(); else renderQuestion();
+}
+$("#nextBtn").addEventListener("click", ()=>{
+  if(quiz.timed && !quiz.answered){ onTimeout(quiz._q, quiz.items[quiz.idx]); return; }
+  advance();
+});
+$("#quitBtn").addEventListener("click", ()=>{ clearTimers(); (quiz.idx>0||quiz.answered)? finishQuiz() : show("setup"); });
+
+function finishQuiz(){
+  clearTimers(); $("#timerWrap").classList.add("hidden");
+  const answered = quiz.score + quiz.missed.length;
+  $("#scoreNum").textContent = quiz.score;
+  $("#scoreDen").textContent = "/"+answered;
+  const pct = answered? Math.round(quiz.score/answered*100):0;
+  const msg = pct>=90? "Contest-ready on these." : pct>=75? "Solid — drill the misses." : "Keep working these.";
+  $("#scorePct").textContent = pct+"% correct · "+msg;
+  const wrap=$("#missedWrap");
+  if(quiz.missed.length){
+    let html=`<div class="section-label" style="margin-top:18px;">Review these (${quiz.missed.length})</div><div class="missed-list">`;
+    quiz.missed.forEach(m=>{
+      const grp = m.item.cat==="Dog" && m.item.g ? ` · ${m.item.g} group` : "";
+      html += `<div class="missed-item"><img src="${m.item.img}" alt=""><div class="mtext"><b>${m.item.n}</b>${grp}<br>you chose ${m.chose}</div></div>`;
+    });
+    html+=`</div>`; wrap.innerHTML=html;
+    $("#retryMissed").classList.remove("hidden");
+  } else {
+    wrap.innerHTML=`<div class="feedback ok show" style="margin-top:14px;">Clean sweep — no misses.</div>`;
+    $("#retryMissed").classList.add("hidden");
+  }
+  renderStats(); show("results");
+}
+$("#retryMissed").addEventListener("click", ()=> startQuiz(quiz.missed.map(m=>m.item)));
+$("#againBtn").addEventListener("click", ()=>{ clearTimers(); renderSetup(); show("setup"); });
+
+/* ---- boot ---- */
+renderSetup(); show("setup");
+</script>
+</body>
+</html>
